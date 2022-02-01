@@ -1,0 +1,15 @@
+main {
+    display: grid;
+    grid-template-columns: 1fr 1em 3fr;
+    gap: 1em;
+}
+
+ol {
+    max-height: calc(100vh - 48px); /* ol margin * 2 + body margin * 2 */
+    overflow-y: scroll;
+}
+
+form div {
+    display: grid;
+    grid-template-columns: minmax(15ch, 1fr) 9fr;
+}
