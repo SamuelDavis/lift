@@ -2,7 +2,7 @@ export enum Store {
   EXERCISES = "exercises",
 }
 
-export function openDb(
+function openDb(
   name: string,
   version: number,
   onUpgradeNeeded: (
@@ -50,11 +50,15 @@ export class DAO<T> {
     });
   }
 
-  readAll(): Promise<T[]> {
+  private readMany(
+    createCursorRequest: (
+      store: IDBObjectStore
+    ) => IDBRequest<IDBCursorWithValue>
+  ): Promise<T[]> {
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction(this.store);
       const objectStore = transaction.objectStore(this.store);
-      const request = objectStore.openCursor();
+      const request = createCursorRequest(objectStore);
       let result: T[] = [];
 
       transaction.onerror = () => reject(transaction.error);
@@ -68,4 +72,25 @@ export class DAO<T> {
       };
     });
   }
+
+  readAll() {
+    return this.readMany((store) => store.openCursor());
+  }
+
+  readIndex(index: string) {
+    return this.readMany((store) => store.index(index).openCursor());
+  }
+}
+
+export function createDb() {
+  return openDb("lift", 1, (db: IDBDatabase, oldVersion: number) => {
+    if (oldVersion < 1) {
+      const exercises = db.createObjectStore(Store.EXERCISES, {
+        autoIncrement: true,
+      });
+      exercises.createIndex("name", "name");
+      exercises.createIndex("modality", ["name", "modality"]);
+      exercises.createIndex("repetitions", ["name", "modality"]);
+    }
+  });
 }

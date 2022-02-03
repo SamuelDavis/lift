@@ -1,11 +1,10 @@
 <script lang="ts">
   import Form from "./Form.svelte";
   import { onMount } from "svelte";
-  import { DAO, openDb, Store } from "./db";
+  import { createDb, DAO, openDb, Store } from "./db";
   import type { Exercise } from "./types";
   import { writable } from "svelte/store";
   import List from "./List.svelte";
-  import DebugTag from "svelte/types/compiler/compile/nodes/DebugTag";
 
   let dao: DAO<Exercise> = null;
   let selected: Exercise;
@@ -13,20 +12,7 @@
   const exercises = writable<Exercise[]>([]);
 
   onMount(async () => {
-    const db = await openDb(
-      "lift",
-      1,
-      (db: IDBDatabase, oldVersion: number) => {
-        if (oldVersion < 1) {
-          const exercises = db.createObjectStore(Store.EXERCISES, {
-            autoIncrement: true,
-          });
-          exercises.createIndex("name", "name");
-          exercises.createIndex("modality", ["name", "modality"]);
-          exercises.createIndex("repetitions", ["name", "modality"]);
-        }
-      }
-    );
+    const db = await createDb();
     dao = new DAO(db, Store.EXERCISES);
     exercises.set(await dao.readAll());
   });
